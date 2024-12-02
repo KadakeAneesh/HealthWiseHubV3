@@ -1,0 +1,112 @@
+{
+	"name": "HealthWise Hub",
+	"short_name": "HWHub",
+	"description": "A community-driven health articles platform",
+	"start_url": "/",
+	"display": "standalone",
+	"background_color": "#ffffff",
+	"theme_color": "#4299E1",
+	"orientation": "portrait",
+	"icons": [
+		{
+			"src": "/icons/android/icon-48x48.ico",
+			"sizes": "48x48",
+			"type": "image/x-icon",
+			"purpose": "any"
+		},
+		{
+			"src": "/icons/android/icon-72x72.ico",
+			"sizes": "72x72",
+			"type": "image/x-icon",
+			"purpose": "any"
+		},
+		{
+			"src": "/icons/android/icon-96x96.ico",
+			"sizes": "96x96",
+			"type": "image/x-icon",
+			"purpose": "any"
+		},
+		{
+			"src": "/icons/android/icon-144x144.ico",
+			"sizes": "144x144",
+			"type": "image/x-icon",
+			"purpose": "any"
+		},
+		{
+			"src": "/icons/android/icon-192x192.ico",
+			"sizes": "192x192",
+			"type": "image/x-icon",
+			"purpose": "any maskable"
+		},
+		{
+			"src": "/icons/android/icon-512x512.ico",
+			"sizes": "512x512",
+			"type": "image/x-icon",
+			"purpose": "any maskable"
+		},
+		{
+			"src": "/icons/ios/16.ico",
+			"sizes": "16x16",
+			"type": "image/x-icon",
+			"purpose": "any"
+		},
+		{
+			"src": "/icons/ios/32.ico",
+			"sizes": "32x32",
+			"type": "image/x-icon",
+			"purpose": "any"
+		},
+		{
+			"src": "/icons/ios/64.ico",
+			"sizes": "64x64",
+			"type": "image/x-icon",
+			"purpose": "any"
+		},
+		{
+			"src": "/icons/ios/128.ico",
+			"sizes": "128x128",
+			"type": "image/x-icon",
+			"purpose": "any"
+		},
+		{
+			"src": "/icons/ios/256.ico",
+			"sizes": "256x256",
+			"type": "image/x-icon",
+			"purpose": "any"
+		},
+		{
+			"src": "/icons/ios/1024.ico",
+			"sizes": "1024x1024",
+			"type": "image/x-icon",
+			"purpose": "any"
+		}
+	],
+	"shortcuts": [
+		{
+			"name": "Home",
+			"url": "/",
+			"icons": [
+				{
+					"src": "/icons/android/icon-96x96.ico",
+					"sizes": "96x96",
+					"type": "image/x-icon"
+				}
+			]
+		}
+	],
+	"screenshots": [
+		{
+			"src": "/icons/windows11/SplashScreen.scale-400.png",
+			"sizes": "2560x1440",
+			"type": "image/png",
+			"form_factor": "wide",
+			"label": "HealthWise Hub Home Screen"
+		}
+	],
+	"categories": ["health", "medical", "education"],
+	"prefer_related_applications": false,
+	"related_applications": [],
+	"scope": "/",
+	"dir": "ltr",
+	"lang": "en-US"
+}
