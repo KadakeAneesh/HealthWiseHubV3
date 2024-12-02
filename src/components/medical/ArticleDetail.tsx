@@ -22,7 +22,7 @@ import {
 	CalendarIcon,
 	UserIcon,
 } from 'lucide-react';
-import { Article } from '@/types/article';
+import { Comment, Article } from '@/types/article';
 import ArticleInteractions from './ArticleInteractions';
 import ArticleComments from './ArticleComments';
 import { useAuth } from '../../hooks/useAuth';
