@@ -17,6 +17,7 @@ import {
 	Spinner,
 	Stack,
 	Text,
+	useBreakpointValue,
 } from '@chakra-ui/react';
 import { doc, updateDoc } from 'firebase/firestore';
 import { getDownloadURL, ref, uploadString } from 'firebase/storage';
@@ -29,6 +30,7 @@ import { FaHeartbeat } from 'react-icons/fa';
 import { HiOutlineDotsHorizontal } from 'react-icons/hi';
 import { RiCakeLine } from 'react-icons/ri';
 import { useSetRecoilState } from 'recoil';
+import CreatePostLink from './CreatePostLink';
 
 type AboutProps = {
 	communityData: Community;
@@ -42,6 +44,7 @@ const About: React.FC<AboutProps> = ({ communityData }) => {
 		useSelectFile();
 	const [uploadingImage, setUploadingImage] = useState(false);
 	const setCommunityStateValue = useSetRecoilState(CommunityState);
+	const isMobile = useBreakpointValue({ base: true, md: false });
 	/**
 	 * Handles community image updates
 	 * Manages the upload process and state updates
@@ -74,26 +77,30 @@ const About: React.FC<AboutProps> = ({ communityData }) => {
 		setUploadingImage(false);
 	};
 	return (
-		<Box position="sticky" top="14px">
+		<Box position={isMobile ? 'relative' : 'sticky'} top="14px">
 			<Flex
 				justify="space-between"
 				align="center"
 				bg="blue.400"
 				color="white"
-				p={3}
+				p={isMobile ? 2 : 3}
 				borderRadius="4px 4px 0px 0px">
-				<Text fontSize="10pt" fontWeight={700}>
+				<Text fontSize={isMobile ? '9pt' : '10pt'} fontWeight={700}>
 					About Community
 				</Text>
 				<Icon as={HiOutlineDotsHorizontal} />
 			</Flex>
 			<Flex
 				direction="column"
-				p={3}
+				p={isMobile ? 2 : 3}
 				bg="white"
 				borderRadius="0px 0px 4px 4px">
-				<Stack>
-					<Flex width="100%" p={2} fontSize="10pt" fontWeight={700}>
+				<Stack spacing={isMobile ? 1 : 2}>
+					<Flex
+						width="100%"
+						p={isMobile ? 1 : 2}
+						fontSize={isMobile ? '9pt' : '10pt'}
+						fontWeight={700}>
 						<Flex direction="column" flexGrow={1}>
 							<Text>
 								{communityData.numberOfMembers.toLocaleString()}
@@ -111,8 +118,12 @@ const About: React.FC<AboutProps> = ({ communityData }) => {
 						width="100%"
 						p={1}
 						fontWeight={500}
-						fontSize="10pt">
-						<Icon as={RiCakeLine} fontSize={18} mr={2} />
+						fontSize={isMobile ? '9pt' : '10pt'}>
+						<Icon
+							as={RiCakeLine}
+							fontSize={isMobile ? 16 : 18}
+							mr={2}
+						/>
 						{communityData.createdAt && (
 							<Text>
 								Created{' '}
@@ -122,11 +133,13 @@ const About: React.FC<AboutProps> = ({ communityData }) => {
 							</Text>
 						)}
 					</Flex>
-					<Link href={`/h/${communityData.id}/submit`}>
-						<Button mt={3} height="30px">
-							Create Post
-						</Button>
-					</Link>
+					{!isMobile && (
+						<Link href={`/h/${communityData.id}/submit`}>
+							<Button mt={3} height="30px">
+								Create Post
+							</Button>
+						</Link>
+					)}
 					{/* Admin Controls Section */}
 					{user?.uid === communityData.creatorId && (
 						<>
@@ -178,6 +191,8 @@ const About: React.FC<AboutProps> = ({ communityData }) => {
 					)}
 				</Stack>
 			</Flex>
+			{isMobile && <CreatePostLink />}{' '}
+			{/* Show CreatePostLink below About on mobile */}
 		</Box>
 	);
 };

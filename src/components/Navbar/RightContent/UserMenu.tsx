@@ -26,6 +26,7 @@ import { VscAccount } from 'react-icons/vsc';
 import { HiUserGroup } from 'react-icons/hi'; // Added for communities icon
 import { useRouter } from 'next/router';
 import { useResetRecoilState, useSetRecoilState } from 'recoil';
+import Link from 'next/link';
 
 type UserMenuProps = {
 	user?: User | null;
@@ -34,6 +35,7 @@ type UserMenuProps = {
 const UserMenu: React.FC<UserMenuProps> = ({ user }) => {
 	const setAuthModalState = useSetRecoilState(authModalState);
 	const router = useRouter();
+	const isAdmin = user?.uid === 'aneeshkadake@gmail.com';
 
 	const logout = async () => {
 		await signOut(auth);
@@ -142,6 +144,14 @@ const UserMenu: React.FC<UserMenuProps> = ({ user }) => {
 								View all Communities
 							</Flex>
 						</MenuItem>
+						<MenuItem as={Link} href="/request-community">
+							Request Community
+						</MenuItem>
+						{isAdmin && (
+							<MenuItem as={Link} href="/admin/dashboard">
+								Admin Dashboard
+							</MenuItem>
+						)}
 						<MenuDivider />
 						<MenuItem
 							fontSize="10pt"
