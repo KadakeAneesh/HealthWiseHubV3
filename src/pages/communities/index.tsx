@@ -337,7 +337,7 @@ const CommunitiesPage: React.FC = () => {
 											colorScheme="blue"
 											variant="outline"
 											onClick={() =>
-												router.push(`/r/${community.id}`)
+												router.push(`/h/${community.id}`)
 											}>
 											View
 										</Button>

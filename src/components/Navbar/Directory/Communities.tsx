@@ -41,7 +41,7 @@ const Communities: React.FC<CommunitiesProps> = () => {
 							<MenuListItem
 								key={snippet.communityId}
 								displayText={`r/${snippet.communityId}`}
-								link={`/r/${snippet.communityId}`}
+								link={`/h/${snippet.communityId}`}
 								icon={FaHeartbeat}
 								iconColor="brand.100"
 							/>
@@ -72,7 +72,7 @@ const Communities: React.FC<CommunitiesProps> = () => {
 						key={snippet.communityId}
 						icon={FaHeartbeat}
 						displayText={`r/${snippet.communityId}`}
-						link={`/r/${snippet.communityId}`}
+						link={`/h/${snippet.communityId}`}
 						iconColor="blue.500"
 						imageURL={snippet.imageURL}
 					/>
