@@ -39,28 +39,33 @@ const TextInputs: React.FC<TextInputsProps> = ({
 				fontSize="10pt"
 				borderRadius={4}
 				placeholder="Title"
-				_placeholder={{ color: 'grey.500' }}
+				_placeholder={{ color: 'gray.500' }}
 				_focus={{
 					outline: 'none',
 					bg: 'white',
 					border: '1px solid',
 					borderColor: 'black',
 				}}
+				bg="white"
+				color="gray.800"
 			/>
 			<Textarea
-				fontSize="10pt"
-				borderRadius={4}
+				name="body"
 				value={textInputs.body}
 				onChange={onChange}
-				placeholder="Text (Optional)"
+				fontSize="10pt"
+				borderRadius={4}
 				height="100px"
-				_placeholder={{ color: 'grey.500' }}
+				placeholder="Text (Optional)"
+				_placeholder={{ color: 'gray.500' }}
 				_focus={{
 					outline: 'none',
 					bg: 'white',
 					border: '1px solid',
 					borderColor: 'black',
 				}}
+				bg="white"
+				color="gray.800"
 			/>
 			<Flex justify="flex-end">
 				<Button
@@ -68,7 +73,8 @@ const TextInputs: React.FC<TextInputsProps> = ({
 					padding="0px 30px"
 					disabled={!textInputs.title}
 					isLoading={loading}
-					onClick={handleCreatePost}>
+					onClick={handleCreatePost}
+					colorScheme="blue">
 					Post
 				</Button>
 			</Flex>

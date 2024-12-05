@@ -5,7 +5,6 @@ import {
 	Container,
 	VStack,
 	Heading,
-	Input,
 	InputGroup,
 	InputRightElement,
 	IconButton,
@@ -23,106 +22,56 @@ import { ProcessedArticle } from '@/types/medical';
 export default function SearchPage() {
 	const router = useRouter();
 	const toast = useToast();
-	const [searchQuery, setSearchQuery] = useState('');
 	const [searchResults, setSearchResults] = useState<
 		ProcessedArticle[]
 	>([]);
 	const [isLoading, setIsLoading] = useState(false);
 	const bgColor = useColorModeValue('white', 'gray.800');
 
-	const performSearch = async (query: string) => {
-		if (!query.trim()) return;
-
-		setIsLoading(true);
-		try {
-			const response = await medicalApi.searchArticles({
-				query: query.trim(),
-				page: 1,
-				pageSize: 20,
-			});
-			setSearchResults(response.articles);
-		} catch (error) {
-			toast({
-				title: 'Search failed',
-				description: 'Please try again',
-				status: 'error',
-				duration: 3000,
-				isClosable: true,
-			});
-		} finally {
-			setIsLoading(false);
-		}
-	};
-
 	useEffect(() => {
-		if (router.isReady && router.query.q) {
-			const queryString = router.query.q as string;
-			setSearchQuery(queryString);
-			performSearch(queryString);
-		}
-	}, [router.isReady, router.query.q]);
+		const { query } = router.query;
 
-	const handleSearch = (event: React.FormEvent) => {
-		event.preventDefault();
-		if (!searchQuery.trim()) {
-			toast({
-				title: 'Please enter a search term',
-				status: 'info',
-				duration: 2000,
-				isClosable: true,
-			});
-			return;
-		}
+		if (router.isReady && query) {
+			const performSearch = async (searchQuery: string) => {
+				setIsLoading(true);
+				try {
+					const response = await medicalApi.searchArticles({
+						query: searchQuery.trim(),
+						page: 1,
+						pageSize: 20,
+					});
+					setSearchResults(response.articles);
+				} catch (error) {
+					toast({
+						title: 'Search failed',
+						description: 'Please try again',
+						status: 'error',
+						duration: 3000,
+						isClosable: true,
+					});
+				} finally {
+					setIsLoading(false);
+				}
+			};
 
-		router.push(
-			{
-				pathname: '/search',
-				query: { q: searchQuery.trim() },
-			},
-			undefined,
-			{ shallow: true }
-		);
-	};
+			performSearch(query as string);
+		}
+	}, [router.isReady, router.query, toast]);
 
 	return (
 		<PageContent>
 			<>
 				<Container maxW="container.lg" py={8}>
 					<VStack spacing={8} align="stretch">
-						<Box>
-							<Heading mb={4}>Health Articles Search</Heading>
-							<form onSubmit={handleSearch}>
-								<InputGroup size="lg">
-									<Input
-										value={searchQuery}
-										onChange={(e) => setSearchQuery(e.target.value)}
-										placeholder="Search medical articles..."
-										bg={bgColor}
-										borderRadius="full"
-									/>
-									<InputRightElement>
-										<IconButton
-											aria-label="Search"
-											icon={<Search />}
-											type="submit"
-											variant="ghost"
-											borderRadius="full"
-											isLoading={isLoading}
-										/>
-									</InputRightElement>
-								</InputGroup>
-							</form>
-						</Box>
-
-						{router.query.q && (
+						{router.query.query && (
 							<Box>
 								<Text mb={4} color="gray.600">
-									Search results for: {router.query.q}
+									Search results for: {router.query.query}
 								</Text>
 								<SearchResults
-									query={router.query.q as string}
-									//results={searchResults}
-									//isLoading={isLoading}
+									query={router.query.query as string}
+									isLoading={isLoading}
+									results={searchResults}
 								/>
 							</Box>
 						)}

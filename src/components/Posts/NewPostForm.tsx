@@ -12,6 +12,7 @@ import {
 	CloseButton,
 	Flex,
 	Icon,
+	Text,
 } from '@chakra-ui/react';
 import { BiPoll } from 'react-icons/bi';
 import { BsLink45Deg, BsMic } from 'react-icons/bs';
@@ -33,6 +34,7 @@ import { getDownloadURL, ref, uploadString } from 'firebase/storage';
 import { db, storage } from '@/firebase/clientApp';
 import useSelectFile from '@/hooks/useSelectFile';
 import TabItemComponent from './TabItem'; // Renamed import to avoid conflict
+import { FaNewspaper } from 'react-icons/fa';
 
 // Move type definitions to the top
 export interface TabItemType {
@@ -43,6 +45,11 @@ export interface TabItemType {
 type NewPostFormProps = {
 	user: User;
 	communityImageURL?: string;
+	defaultValues?: {
+		title: string;
+		body: string;
+	};
+	isSharedArticle?: boolean;
 };
 
 const formTabs: TabItemType[] = [
@@ -67,12 +74,14 @@ const formTabs: TabItemType[] = [
 const NewPostForm: React.FC<NewPostFormProps> = ({
 	user,
 	communityImageURL,
+	defaultValues,
+	isSharedArticle,
 }) => {
 	const router = useRouter();
 	const [selectedTab, setSelectedTab] = useState(formTabs[0].title);
 	const [textInputs, setTextInputs] = useState({
-		title: '',
-		body: '',
+		title: defaultValues?.title || '',
+		body: defaultValues?.body || '',
 	});
 	const { selectedFile, setSelectedFile, onSelectFile } =
 		useSelectFile();
@@ -133,6 +142,12 @@ const NewPostForm: React.FC<NewPostFormProps> = ({
 
 	return (
 		<Flex direction="column" bg="white" borderRadius={4} mt={2}>
+			{isSharedArticle && (
+				<Flex bg="blue.50" p={2} borderRadius="4px 4px 0 0">
+					<Icon as={FaNewspaper} color="blue.500" mr={2} />
+					<Text color="blue.500">Sharing Health Article</Text>
+				</Flex>
+			)}
 			<Flex width="100%">
 				{formTabs.map((item) => (
 					<TabItemComponent

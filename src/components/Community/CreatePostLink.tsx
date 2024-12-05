@@ -27,12 +27,16 @@ const CreatePostLink: React.FC<CreatePostProps> = () => {
 			return;
 		}
 
-		const { community } = router.query;
-		if (community) {
-			router.push(`/h/${community}/submit`);
-			return;
+		// Get the current community from the URL path
+		const { communityId } = router.query;
+
+		if (communityId) {
+			// If we're already in a community page, go directly to submit
+			router.push(`/h/${communityId}/submit`);
+		} else {
+			// Only open directory menu if we're not in a community
+			toggleMenuOpen();
 		}
-		toggleMenuOpen();
 	};
 
 	return (

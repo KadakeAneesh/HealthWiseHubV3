@@ -22,12 +22,16 @@ interface SearchResultsProps {
 	query: string;
 	page?: number;
 	pageSize?: number;
+	isLoading?: boolean; // Make optional
+	results?: ProcessedArticle[]; // Make optional
 }
 
 export default function SearchResults({
 	query,
 	page = 1,
 	pageSize = 20,
+	isLoading = false,
+	results = [],
 }: SearchResultsProps) {
 	const [articles, setArticles] = useState<ProcessedArticle[]>([]);
 	const [loading, setLoading] = useState(false);
@@ -38,37 +42,32 @@ export default function SearchResults({
 	 */
 
 	useEffect(() => {
-		async function performSearch() {
-			if (!query.trim()) return;
+		if (!query.trim()) return;
 
-			setLoading(true);
-			setError(null);
+		setLoading(true);
+		setError(null);
 
-			try {
-				const response = await medicalApi.searchArticles({
-					query,
-					page,
-					pageSize,
-				});
+		medicalApi
+			.searchArticles({
+				query,
+				page: 1,
+				pageSize: 20,
+			})
+			.then((response) => {
 				setArticles(response.articles);
-				// Cache articles for detail view
-			} catch (err) {
-				console.error('Search error:', err);
+			})
+			.catch((err) => {
 				setError(
 					err instanceof Error
 						? err.message
 						: 'Failed to search articles'
 				);
-			} finally {
+			})
+			.finally(() => {
 				setLoading(false);
-			}
-		}
+			});
+	}, [query]);
 
-		performSearch();
-	}, [query, page, pageSize]);
-	/**
-	 * Renders appropriate UI based on current state
-	 */
 	if (error) {
 		return (
 			<Alert status="error" borderRadius="md">

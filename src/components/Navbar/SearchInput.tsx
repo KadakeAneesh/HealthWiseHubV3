@@ -7,8 +7,9 @@ import {
 	InputRightElement,
 	IconButton,
 	useToast,
+	Flex,
 } from '@chakra-ui/react';
-import { Search } from 'lucide-react';
+import { Search, SearchIcon } from 'lucide-react';
 
 const SearchInput: React.FC = () => {
 	const [searchQuery, setSearchQuery] = useState('');
@@ -28,48 +29,74 @@ const SearchInput: React.FC = () => {
 			});
 			return;
 		}
-
-		// Navigate to search page with query
-		router.push({
-			pathname: '/search',
-			query: { q: trimmedQuery },
-		});
+		if (searchQuery.trim()) {
+			// Navigate to search page with query parameter
+			router.push({
+				pathname: '/search',
+				query: { q: searchQuery },
+			});
+		}
 	};
+	// Navigate to search page with query
+	// 	router.push({
+	// 		pathname: '/search',
+	// 		query: { q: trimmedQuery },
+	// 	});
+	// };
 
 	return (
-		<form onSubmit={handleSearch} style={{ width: '100%' }}>
-			<InputGroup>
-				<Input
-					placeholder="Search health articles..."
-					value={searchQuery}
-					onChange={(e) => setSearchQuery(e.target.value)}
-					fontSize="10pt"
-					_placeholder={{ color: 'gray.500' }}
-					_hover={{
-						bg: 'white',
-						border: '1px solid',
-						borderColor: 'blue.500',
-					}}
-					_focus={{
-						outline: 'none',
-						border: '1px solid',
-						borderColor: 'blue.500',
-					}}
-					height="34px"
-					bg="gray.50"
-				/>
-				<InputRightElement>
-					<IconButton
-						aria-label="Search"
-						icon={<Search size={18} />}
-						onClick={handleSearch}
-						type="submit"
-						variant="ghost"
-						size="sm"
+		// <form onSubmit={handleSearch} style={{ width: '100%' }}>
+		// 	<InputGroup>
+		// 		<Input
+		// 			placeholder="Search health articles..."
+		// 			value={searchQuery}
+		// 			onChange={(e) => setSearchQuery(e.target.value)}
+		// 			fontSize="10pt"
+		// 			_placeholder={{ color: 'gray.500' }}
+		// 			_hover={{
+		// 				bg: 'white',
+		// 				border: '1px solid',
+		// 				borderColor: 'blue.500',
+		// 			}}
+		// 			_focus={{
+		// 				outline: 'none',
+		// 				border: '1px solid',
+		// 				borderColor: 'blue.500',
+		// 			}}
+		// 			height="34px"
+		// 			bg="gray.50"
+		// 		/>
+		// 		<InputRightElement>
+		// 			<IconButton
+		// 				aria-label="Search"
+		// 				icon={<Search size={18} />}
+		// 				onClick={handleSearch}
+		// 				type="submit"
+		// 				variant="ghost"
+		// 				size="sm"
+		// 			/>
+		// 		</InputRightElement>
+		// 	</InputGroup>
+		// </form>
+		<Flex flex={1} maxWidth="600px">
+			<form onSubmit={handleSearch} style={{ width: '100%' }}>
+				<InputGroup>
+					<Input
+						placeholder="Search health articles..."
+						value={searchQuery}
+						onChange={(e) => setSearchQuery(e.target.value)}
 					/>
-				</InputRightElement>
-			</InputGroup>
-		</form>
+					<InputRightElement>
+						<IconButton
+							aria-label="Search"
+							icon={<SearchIcon />}
+							type="submit"
+							variant="ghost"
+						/>
+					</InputRightElement>
+				</InputGroup>
+			</form>
+		</Flex>
 	);
 };
 

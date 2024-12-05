@@ -13,14 +13,15 @@ export type Post = {
 	imageURL?: string;
 	communityImageURL?: string;
 	createdAt: Timestamp;
+	isSharedArticle?: boolean;
 };
 
-export type PostVote = {
+export interface PostVote {
 	id: string;
 	postId: string;
 	communityId: string;
 	voteValue: number;
-};
+}
 
 interface PostState {
 	selectedPost: Post | null;

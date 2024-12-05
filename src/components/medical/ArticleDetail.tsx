@@ -1,10 +1,5 @@
-/**
- * ArticleDetail Component
- * Provides a comprehensive view of a medical article with full content and metadata
- * Integrates user interactions like comments and likes
- * Implements data persistence and loading states
- */
-import React, { useEffect, useState } from 'react';
+// components/Medical/ArticleDetail.tsx
+import { useEffect, useState } from 'react';
 import {
 	Box,
 	Container,
@@ -16,18 +11,27 @@ import {
 	Button,
 	useToast,
 	Skeleton,
+	Flex,
 } from '@chakra-ui/react';
 import {
-	ExternalLinkIcon,
-	CalendarIcon,
-	UserIcon,
+	ExternalLink,
+	Calendar,
+	User,
+	ChevronLeft,
+	Share2,
 } from 'lucide-react';
-import { Comment, Article } from '@/types/article';
+import { Article } from '@/types/article';
 import ArticleInteractions from './ArticleInteractions';
 import ArticleComments from './ArticleComments';
-import { useAuth } from '../../hooks/useAuth';
-import { db } from '../../firebase/clientApp';
+import { useAuth } from '@/hooks/useAuth';
+import { db } from '@/firebase/clientApp';
 import { doc, getDoc } from 'firebase/firestore';
+import { useRouter } from 'next/router';
+import { useSetRecoilState } from 'recoil';
+import { authModalState } from '@/atoms/authModalAtom';
+import useDirectory from '@/hooks/useDirectory';
+import { FaShare } from 'react-icons/fa';
+import { FaExternalLinkAlt } from 'react-icons/fa';
 
 interface ArticleDetailProps {
 	article: Article;
@@ -40,25 +44,80 @@ const ArticleDetail: React.FC<ArticleDetailProps> = ({ article }) => {
 	const [articleData, setArticleData] = useState<Article | null>(
 		null
 	);
-	/**
-	 * Fetches and merges article data from Firestore with provided data
-	 * Handles persistence of article interactions and metadata
-	 */
+	const router = useRouter();
+	const setAuthModalState = useSetRecoilState(authModalState);
+	const { toggleMenuOpen } = useDirectory();
+
+	const handleShare = () => {
+		if (!user) {
+			setAuthModalState({ open: true, view: 'login' });
+			return;
+		}
+
+		const postData = {
+			title: article.title,
+			body: `${article.summary || article.content}\n\nKeywords: ${
+				article.keywords ? article.keywords.join(', ') : ''
+			}\n\nOriginal Article: ${article.url}`,
+			articleUrl: article.url,
+			isSharedArticle: true,
+			source: article.source,
+			publishDate: article.publishDate,
+		};
+
+		sessionStorage.setItem(
+			'sharedArticleData',
+			JSON.stringify(postData)
+		);
+
+		const { communityId } = router.query;
+		if (communityId) {
+			router.push(`/h/${communityId}/submit`);
+		} else {
+			toggleMenuOpen();
+			toast({
+				title: 'Select a community',
+				description: 'Choose where you want to share this article',
+				status: 'info',
+				duration: 3000,
+			});
+		}
+	};
+
+	const ActionButtons = () => (
+		<HStack spacing={4} width="100%">
+			<Button
+				leftIcon={<FaShare />}
+				colorScheme="blue"
+				onClick={handleShare}
+				isLoading={loading}>
+				Share to Community
+			</Button>
+			{articleData?.url && (
+				<Button
+					as="a"
+					href={articleData.url}
+					target="_blank"
+					leftIcon={<FaExternalLinkAlt />}
+					variant="outline">
+					View Original
+				</Button>
+			)}
+		</HStack>
+	);
+
 	useEffect(() => {
 		const fetchArticleData = async () => {
 			try {
-				// Try to get article data from Firestore first
 				const articleDoc = await getDoc(
 					doc(db, 'articles', article.id)
 				);
-
 				if (articleDoc.exists()) {
 					setArticleData({
 						...article,
 						...articleDoc.data(),
 					} as Article);
 				} else {
-					// If not in Firestore, use the passed article data
 					setArticleData(article);
 				}
 			} catch (error) {
@@ -76,43 +135,70 @@ const ArticleDetail: React.FC<ArticleDetailProps> = ({ article }) => {
 		return <Skeleton height="600px" />;
 	}
 
+	const AbstractSection = () => (
+		<Box bg="gray.50" p={6} borderRadius="md">
+			<Heading as="h2" size="md" mb={4}>
+				Abstract
+			</Heading>
+			{loading ? (
+				<Skeleton height="100px" />
+			) : articleData?.content || articleData?.summary ? (
+				<Text>{articleData.content || articleData.summary}</Text>
+			) : (
+				<Text color="gray.500">Abstract not available</Text>
+			)}
+		</Box>
+	);
+
 	return (
 		<Container maxW="container.lg" py={8}>
-			<VStack spacing={6} align="stretch">
-				<Heading as="h1" size="xl">
-					{articleData.title}
-				</Heading>
+			<Flex mb={4}>
+				<Button
+					leftIcon={<ChevronLeft />}
+					onClick={() => router.back()}
+					variant="ghost">
+					Back to Search
+				</Button>
+			</Flex>
+
+			<VStack
+				spacing={6}
+				align="stretch"
+				bg="white"
+				p={6}
+				borderRadius="md"
+				shadow="sm">
+				<Tag size="md" colorScheme="purple" alignSelf="flex-start">
+					{articleData.source?.toUpperCase()}
+				</Tag>
+
+				<Heading size="xl">{articleData.title}</Heading>
 
 				<HStack spacing={4} wrap="wrap">
-					{articleData.publishDate && (
-						<HStack>
-							<CalendarIcon size={16} />
-							<Text>
-								{new Date(
-									articleData.publishDate
-								).toLocaleDateString()}
-							</Text>
-						</HStack>
-					)}
-
-					{articleData.source && (
-						<Tag size="md" colorScheme="blue">
-							{articleData.source}
-						</Tag>
-					)}
+					<HStack>
+						<Calendar size={16} />
+						<Text>
+							{new Date(articleData.publishDate).toLocaleDateString()}
+						</Text>
+					</HStack>
 				</HStack>
 
-				<ArticleInteractions
-					articleId={articleData.id}
-					interactions={articleData.interactions}
-				/>
-
-				{articleData.authors && articleData.authors.length > 0 && (
-					<HStack spacing={2}>
-						<UserIcon size={16} />
-						<Text>{articleData.authors.join(', ')}</Text>
-					</HStack>
-				)}
+				<HStack spacing={4}>
+					<Button
+						leftIcon={<Share2 />}
+						colorScheme="blue"
+						onClick={handleShare}>
+						Share to Community
+					</Button>
+					<Button
+						as="a"
+						href={articleData.url}
+						target="_blank"
+						leftIcon={<ExternalLink />}
+						variant="outline">
+						View Original
+					</Button>
+				</HStack>
 
 				<Box bg="gray.50" p={6} borderRadius="md">
 					<Heading as="h2" size="md" mb={4}>
@@ -120,37 +206,27 @@ const ArticleDetail: React.FC<ArticleDetailProps> = ({ article }) => {
 					</Heading>
 					<Text>{articleData.summary || articleData.content}</Text>
 				</Box>
+				<AbstractSection />
 
-				{((articleData.keywords && articleData.keywords.length > 0) ||
-					(articleData.categories &&
-						articleData.categories.length > 0)) && (
+				{articleData.keywords?.length > 0 && (
 					<Box>
 						<Heading as="h3" size="sm" mb={2}>
-							Topics & Keywords
+							Keywords
 						</Heading>
 						<HStack spacing={2} wrap="wrap">
-							{[
-								...(articleData.keywords || []),
-								...(articleData.categories || []),
-							].map((tag, index) => (
+							{articleData.keywords.map((keyword, index) => (
 								<Tag key={index} colorScheme="blue" variant="subtle">
-									{tag}
+									{keyword}
 								</Tag>
 							))}
 						</HStack>
 					</Box>
 				)}
 
-				{articleData.url && (
-					<Button
-						rightIcon={<ExternalLinkIcon />}
-						as="a"
-						href={articleData.url}
-						target="_blank"
-						rel="noopener noreferrer">
-						View Original Article
-					</Button>
-				)}
+				<ArticleInteractions
+					articleId={articleData.id}
+					interactions={articleData.interactions}
+				/>
 
 				<ArticleComments
 					articleId={articleData.id}

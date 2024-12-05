@@ -7,6 +7,7 @@ import {
 	ProcessedArticle,
 	ArticleSearchParams,
 	ArticleSearchResponse,
+	Author,
 } from '@/types/medical';
 
 export class MedicalApiService {
@@ -15,8 +16,6 @@ export class MedicalApiService {
 		'https://eutils.ncbi.nlm.nih.gov/entrez/eutils';
 	private readonly MEDLINE_BASE =
 		'https://wsearch.nlm.nih.gov/ws/query';
-	private readonly MAX_RETRIES = 3;
-	private readonly RETRY_DELAY = 1000;
 
 	private constructor() {}
 
@@ -142,8 +141,8 @@ export class MedicalApiService {
 		)}&retstart=${start}&retmax=${pageSize}&retmode=json`;
 
 		try {
-			const searchResponse = await axios.get(searchUrl);
-			const idList = searchResponse.data.esearchresult.idlist || [];
+			const searchResponse = await this.makeProxiedRequest(searchUrl);
+			const idList = searchResponse.esearchresult?.idlist || [];
 
 			if (idList.length === 0) {
 				return [];
@@ -152,108 +151,102 @@ export class MedicalApiService {
 			const summaryUrl = `${
 				this.PUBMED_BASE
 			}/esummary.fcgi?db=pubmed&id=${idList.join(',')}&retmode=json`;
-			const summaryResponse = await axios.get(summaryUrl);
-			const results = summaryResponse.data.result || {};
+			const summaryResponse = await this.makeProxiedRequest(
+				summaryUrl
+			);
 
-			return Object.values(results)
-				.filter((article: any) => article.uid)
-				.map((article: any) => ({
-					id: `pubmed-${article.uid}`,
-					source: 'pubmed',
-					title: article.title || '',
-					content: article.abstract || '',
-					summary: article.abstract
-						? `${article.abstract.substring(0, 200)}...`
-						: '',
-					publishDate: article.pubdate || new Date().toISOString(),
-					url: `https://pubmed.ncbi.nlm.nih.gov/${article.uid}`,
-					authors: (article.authors || []).map((author: any) => ({
-						lastName: author.name.split(' ').pop() || '',
-						firstName: author.name.split(' ').slice(0, -1).join(' '),
-						initials: author.name.match(/\b(\w)/g)?.join('') || '',
-					})),
-					keywords: article.keywords || [],
-					categories: article.mesh || [],
-					journal: article.fulljournalname || article.source || '',
-				}));
+			return this.processPubMedResults(summaryResponse.result || {});
 		} catch (error) {
 			console.error('PubMed search error:', error);
 			return [];
 		}
 	}
 
-	private async makeProxiedRequest(
-		url: string,
-		params: any = {},
-		retryCount = 0
-	): Promise<any> {
+	private async makeProxiedRequest(url: string): Promise<any> {
 		try {
-			const response = await axios.get('/api/proxy', {
-				params: {
-					url: encodeURIComponent(url),
-					...params,
-				},
-			});
-			return response.data;
-		} catch (error) {
-			if (
-				retryCount < this.MAX_RETRIES &&
-				axios.isAxiosError(error) &&
-				error.response?.status === 500
-			) {
-				await new Promise((resolve) =>
-					setTimeout(resolve, this.RETRY_DELAY * (retryCount + 1))
-				);
-				return this.makeProxiedRequest(url, params, retryCount + 1);
+			const response = await fetch(
+				'/api/proxy?' +
+					new URLSearchParams({
+						url: encodeURIComponent(url),
+					})
+			);
+
+			if (!response.ok) {
+				throw new Error('Network response was not ok');
 			}
+
+			return await response.json();
+		} catch (error) {
+			console.error('Proxy request failed:', error);
 			throw error;
 		}
 	}
 
-	async searchMedlinePlus(
+	private async searchMedlinePlus(
 		query: string,
 		page: number,
 		pageSize: number
 	): Promise<ProcessedArticle[]> {
 		try {
-			const url = `${this.MEDLINE_BASE}`;
-			const params = {
-				db: 'healthTopics',
-				term: query,
-				retstart: (page - 1) * pageSize,
-				retmax: pageSize,
-			};
+			const start = (page - 1) * pageSize;
+			const url = `${
+				this.MEDLINE_BASE
+			}?db=healthTopics&term=${encodeURIComponent(
+				query
+			)}&retstart=${start}&retmax=${pageSize}`;
 
-			const response = await this.makeProxiedRequest(url, params);
-			const results = response.result || [];
-
-			return results.map((article: any) => ({
-				id: `medlineplus-${Date.now()}-${Math.random()
-					.toString(36)
-					.substr(2, 9)}`,
-				source: 'medlineplus',
-				title: article.title || '',
-				content: article.snippet || '',
-				summary: article.snippet || '',
-				publishDate: article.published || new Date().toISOString(),
-				url: article.url || '',
-				authors: [],
-				keywords: article.keywords || [],
-				categories: article.categories || [],
-				journal: '',
-			}));
+			const response = await this.makeProxiedRequest(url);
+			return this.processMedlinePlusResults(response.result || []);
 		} catch (error) {
 			console.error('MedlinePlus search error:', error);
-			if (
-				axios.isAxiosError(error) &&
-				error.response?.status === 429
-			) {
-				throw new Error(
-					'Rate limit exceeded. Please try again later.'
-				);
-			}
 			return [];
 		}
+	}
+
+	private processPubMedResults(results: any): ProcessedArticle[] {
+		return Object.values(results)
+			.filter((article: any) => article.uid)
+			.map((article: any) => ({
+				id: `pubmed-${article.uid}`,
+				source: 'pubmed',
+				title: article.title || '',
+				content: article.abstract || '',
+				summary: article.abstract || '',
+				publishDate: article.pubdate || new Date().toISOString(),
+				url: `https://pubmed.ncbi.nlm.nih.gov/${article.uid}`,
+				authors: this.processAuthors(article.authors || []),
+				keywords: article.keywords || [],
+				categories: article.mesh || [],
+				journal: article.fulljournalname || article.source || '',
+			}));
+	}
+
+	private processMedlinePlusResults(
+		results: any[]
+	): ProcessedArticle[] {
+		return results.map((article) => ({
+			id: `medlineplus-${Date.now()}-${Math.random()
+				.toString(36)
+				.substr(2, 9)}`,
+			source: 'medlineplus',
+			title: article.title || '',
+			content: article.snippet || article.content || '',
+			summary: article.snippet || '',
+			publishDate: article.published || new Date().toISOString(),
+			url: article.url || '',
+			authors: [],
+			keywords: article.keywords || [],
+			categories: article.categories || [],
+			journal: '',
+		}));
+	}
+
+	private processAuthors(authors: any[]): Author[] {
+		return authors.map((author) => ({
+			firstName: author.name.split(' ').slice(0, -1).join(' '),
+			lastName: author.name.split(' ').pop() || '',
+			initials: author.name.match(/\b(\w)/g)?.join('') || '',
+		}));
 	}
 }
 

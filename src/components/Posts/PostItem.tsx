@@ -8,6 +8,7 @@ import {
 	Alert,
 	AlertIcon,
 	AlertTitle,
+	Badge,
 	Flex,
 	Icon,
 	Image,
@@ -34,6 +35,7 @@ import {
 	IoBookOutline,
 	IoBookmarkOutline,
 } from 'react-icons/io5';
+import { FaNewspaper } from 'react-icons/fa';
 
 type PostItemProps = {
 	post: Post;
@@ -87,6 +89,14 @@ const PostItem: React.FC<PostItemProps> = ({
 			setError(error.message);
 		}
 		setLoadingDelete(false);
+	};
+
+	const handleCommentsClick = (event: React.MouseEvent) => {
+		event.stopPropagation();
+		const safeUrl = `/h/${encodeURIComponent(
+			post.communityId
+		)}/comments/${post.id}`;
+		router.push(safeUrl);
 	};
 
 	return (
@@ -146,6 +156,19 @@ const PostItem: React.FC<PostItemProps> = ({
 						<AlertTitle mr={2}>{error}</AlertTitle>
 					</Alert>
 				)}
+				{/* <Stack spacing={1} p="10px">
+					<Flex align="center" gap={2}>
+						{post.isSharedArticle && (
+							<>
+								<Icon as={FaNewspaper} color="blue.500" />
+								<Badge colorScheme="blue">Health Article</Badge>
+							</>
+						)}
+						<Text fontSize="12pt" fontWeight={600}>
+							{post.title}
+						</Text>
+					</Flex>
+				</Stack> */}
 				<Stack spacing={1} p="10px">
 					{/* Post metadata and content */}
 					<Stack
@@ -222,7 +245,8 @@ const PostItem: React.FC<PostItemProps> = ({
 						p="8px 10px"
 						borderRadius={4}
 						_hover={{ bg: 'gray.200' }}
-						cursor="pointer">
+						cursor="pointer"
+						onClick={handleCommentsClick}>
 						<Icon as={BsChat} mr={2} />
 						<Text fontSize="9pt">{post.numberOfComments}</Text>
 					</Flex>

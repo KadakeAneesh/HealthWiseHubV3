@@ -6,11 +6,18 @@ export default async function handler(
 	req: NextApiRequest,
 	res: NextApiResponse
 ) {
+	if (req.method === 'OPTIONS') {
+		res.setHeader('Access-Control-Allow-Origin', '*');
+		res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+		res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+		return res.status(200).end();
+	}
+
 	if (req.method !== 'GET') {
 		return res.status(405).json({ message: 'Method not allowed' });
 	}
 
-	const { url, ...params } = req.query;
+	const { url } = req.query;
 
 	if (!url || typeof url !== 'string') {
 		return res
@@ -22,35 +29,29 @@ export default async function handler(
 		const response = await axios({
 			method: 'get',
 			url: decodeURIComponent(url),
-			params: params,
 			headers: {
 				Accept: 'application/json',
 				'Content-Type': 'application/json',
-				Origin:
-					process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000',
+				'User-Agent': 'HealthWise Hub/1.0',
 			},
-			timeout: 10000, // 10 second timeout
+			timeout: 10000,
 			maxRedirects: 5,
 		});
 
-		// Set CORS headers
 		res.setHeader('Access-Control-Allow-Origin', '*');
-		res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
-		res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+		res.setHeader(
+			'Cache-Control',
+			's-maxage=300, stale-while-revalidate'
+		);
 
 		return res.status(200).json(response.data);
 	} catch (error) {
 		console.error('Proxy error:', error);
 
 		if (axios.isAxiosError(error)) {
-			const status = error.response?.status || 500;
-			const errorMessage =
-				error.response?.data?.message || error.message;
-
-			return res.status(status).json({
+			return res.status(error.response?.status || 500).json({
 				message: 'Error fetching data',
-				error: errorMessage,
-				details: error.response?.data,
+				error: error.message,
 			});
 		}
 

@@ -146,10 +146,10 @@ const Home: NextPage = () => {
 	return (
 		<PageContent>
 			<>
-				<Box padding={8}>
+				{/* <Box padding={8}>
 					<Heading mb={4}>Health Articles Search</Heading>
-					{/* <SearchBar onSearch={handleSearch} /> */}
-				</Box>
+					{/* <SearchBar onSearch={handleSearch} />
+				</Box> */}
 				<CreatePostLink />
 				{loading ? (
 					<PostLoader />

@@ -43,20 +43,21 @@ const Comments: React.FC<CommentsProps> = ({
 	const [createLoading, setCreateLoading] = useState(false);
 	const [loadingDeleteId, setloadingDeleteId] = useState('');
 	const setPostState = useSetRecoilState(postState);
+	const [error, setError] = useState('');
 
-	const onCreateComment = async () => {
+	const onCreateComment = async (commentText: string) => {
 		setCreateLoading(true);
 		try {
 			const batch = writeBatch(db);
 
-			//create  a comment document
+			// Create comment document
 			const commentDocRef = doc(collection(db, 'comments'));
 			const newComment: Comment = {
 				id: commentDocRef.id,
+				postId: selectedPost?.id!,
 				creatorId: user.uid,
 				creatorDisplayText: user.email!.split('@')[0],
 				communityId,
-				postId: selectedPost?.id!,
 				postTitle: selectedPost?.title!,
 				text: commentText,
 				createdAt: serverTimestamp() as Timestamp,
@@ -64,31 +65,28 @@ const Comments: React.FC<CommentsProps> = ({
 
 			batch.set(commentDocRef, newComment);
 
-			newComment.createdAt = {
-				seconds: Date.now() / 1000,
-			} as Timestamp;
-
-			//update post numberOfComments +1
-			const postDocRef = doc(db, 'posts', selectedPost?.id!);
-
-			batch.update(postDocRef, {
+			batch.update(doc(db, 'posts', selectedPost?.id!), {
 				numberOfComments: increment(1),
 			});
 
 			await batch.commit();
 
-			//update client recoil state to show new comments and their count
-			setCommmentText('');
-			setComments((prev) => [newComment, ...prev]);
-			setPostState((prev) => ({
+			// Update local state with properly typed comment
+			setComments((prev) => [
+				{
+					...newComment,
+					createdAt: {
+						seconds: Date.now() / 1000,
+						nanoseconds: 0,
+					} as Timestamp,
+				},
 				...prev,
-				selectedPost: {
-					...prev.selectedPost,
-					numberOfComments: prev.selectedPost?.numberOfComments! + 1,
-				} as Post,
-			}));
+			]);
+
+			// Clear comment input
+			setCommmentText(''); // Note the correct variable name
 		} catch (error) {
-			console.log('onCreateComment error', error);
+			console.error('onCreateComment error:', error);
 		}
 		setCreateLoading(false);
 	};
@@ -129,12 +127,16 @@ const Comments: React.FC<CommentsProps> = ({
 	};
 
 	const getPostComments = async () => {
+		if (!selectedPost?.id) return;
+
+		setFetchLoading(true);
 		try {
 			const commentsQuery = query(
 				collection(db, 'comments'),
-				where('postId', '==', selectedPost?.id),
+				where('postId', '==', selectedPost.id),
 				orderBy('createdAt', 'desc')
 			);
+
 			const commentDocs = await getDocs(commentsQuery);
 			const comments = commentDocs.docs.map((doc) => ({
 				id: doc.id,
@@ -142,16 +144,16 @@ const Comments: React.FC<CommentsProps> = ({
 			}));
 			setComments(comments as Comment[]);
 		} catch (error) {
-			console.log('getPostComments error', error);
+			setError('Error fetching comments');
+			console.error('getPostComments error:', error);
+		} finally {
+			setFetchLoading(false);
 		}
-		setFetchLoading(false);
 	};
 
 	useEffect(() => {
-		if (!selectedPost) return;
 		getPostComments();
-	}, [selectedPost]);
-
+	}, [selectedPost?.id]);
 	return (
 		<Box bg="white" borderRadius="0px 0px 4px 4px" p={2}>
 			<Flex
