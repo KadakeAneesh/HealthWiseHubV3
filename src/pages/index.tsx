@@ -146,7 +146,6 @@ const Home: NextPage = () => {
 	return (
 		<PageContent>
 			<>
-<<<<<<< HEAD
 				{/* <Box padding={8}>
 					<Heading mb={4}>Health Articles Search</Heading>
 					{/* <SearchBar onSearch={handleSearch} />
