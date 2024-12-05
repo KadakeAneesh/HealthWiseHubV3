@@ -146,9 +146,15 @@ const Home: NextPage = () => {
 	return (
 		<PageContent>
 			<>
+<<<<<<< HEAD
 				{/* <Box padding={8}>
 					<Heading mb={4}>Health Articles Search</Heading>
 					{/* <SearchBar onSearch={handleSearch} />
+=======
+				{/*<Box padding={8}>
+					<Heading mb={4}>Health Articles Search</Heading>
+					 <SearchBar onSearch={handleSearch} />
+>>>>>>> 8b6c0a8fd6c74c29d54ebe773c2524c8bd89f0d3
 				</Box> */}
 				<CreatePostLink />
 				{loading ? (
