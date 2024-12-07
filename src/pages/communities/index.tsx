@@ -118,16 +118,27 @@ const CommunitiesPage: React.FC = () => {
 				limit(ITEMS_PER_PAGE)
 			);
 
+			// Add error handling and logging
+			console.log('Fetching communities...');
 			const communityDocs = await getDocs(communitiesQuery);
+			console.log('Fetched docs:', communityDocs.size);
+
 			const lastVisible =
 				communityDocs.docs[communityDocs.docs.length - 1];
-			const processedCommunities = await processCommunityDocs(
-				communityDocs.docs
+			const processedCommunities = await Promise.all(
+				communityDocs.docs.map(async (doc) => {
+					const communityData = {
+						id: doc.id,
+						...doc.data(),
+					} as Community;
+					return communityData;
+				})
 			);
 
 			setCommunities(processedCommunities);
 			setLastVisibleDoc(lastVisible);
 			setHasMore(communityDocs.docs.length === ITEMS_PER_PAGE);
+			setLoading(false);
 		} catch (error) {
 			console.error('Error fetching communities:', error);
 			toast({

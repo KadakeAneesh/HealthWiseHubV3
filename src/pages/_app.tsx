@@ -12,6 +12,7 @@ import Layout from '../components/Layout/Layout';
 import { RecoilRoot } from 'recoil';
 import Head from 'next/head';
 import { DownloadIcon } from '@chakra-ui/icons';
+import { fixPostIds } from '../utils/dbFixes';
 
 interface BeforeInstallPromptEvent extends Event {
 	prompt: () => Promise<void>;
@@ -22,6 +23,12 @@ export default function App({ Component, pageProps }: AppProps) {
 	const [deferredPrompt, setDeferredPrompt] =
 		useState<BeforeInstallPromptEvent | null>(null);
 	const toast = useToast();
+
+	const runDatabaseFixes = async () => {
+		if (process.env.NODE_ENV === 'development') {
+			await fixPostIds();
+		}
+	};
 
 	useEffect(() => {
 		const handleBeforeInstallPrompt = (e: Event) => {

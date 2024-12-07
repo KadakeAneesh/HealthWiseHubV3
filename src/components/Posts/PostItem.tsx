@@ -36,6 +36,8 @@ import {
 	IoBookmarkOutline,
 } from 'react-icons/io5';
 import { FaNewspaper } from 'react-icons/fa';
+import { db } from '@/firebase/clientApp';
+import { getDoc, doc } from 'firebase/firestore';
 
 type PostItemProps = {
 	post: Post;
@@ -93,10 +95,33 @@ const PostItem: React.FC<PostItemProps> = ({
 
 	const handleCommentsClick = (event: React.MouseEvent) => {
 		event.stopPropagation();
-		const safeUrl = `/h/${encodeURIComponent(
+
+		// Early validation with user feedback
+		if (!post?.id) {
+			console.error('Post ID is missing:', post);
+			// Optionally refresh the post data
+			const fetchPostData = async () => {
+				try {
+					const postDoc = await getDoc(doc(db, 'posts', post.id));
+					if (postDoc.exists()) {
+						const updatedPost = {
+							...postDoc.data(),
+							id: postDoc.id,
+						} as Post;
+						// Update your post state here
+					}
+				} catch (error) {
+					console.error('Error fetching post:', error);
+				}
+			};
+			fetchPostData();
+			return;
+		}
+
+		const commentsPath = `/h/${encodeURIComponent(
 			post.communityId
-		)}/comments/${post.id}`;
-		router.push(safeUrl);
+		)}/comments/${encodeURIComponent(post.id)}`;
+		router.push(commentsPath);
 	};
 
 	return (

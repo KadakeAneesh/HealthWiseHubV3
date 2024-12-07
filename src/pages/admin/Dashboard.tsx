@@ -10,6 +10,12 @@ import {
 	Button,
 	useToast,
 	Text,
+	Alert,
+	AlertDescription,
+	AlertIcon,
+	AlertTitle,
+	Spinner,
+	ButtonGroup,
 } from '@chakra-ui/react';
 import {
 	collection,
@@ -19,6 +25,8 @@ import {
 	updateDoc,
 	getDoc,
 	runTransaction,
+	orderBy,
+	serverTimestamp,
 } from 'firebase/firestore';
 import { db, auth } from '@/firebase/clientApp';
 import { useAuthState } from 'react-firebase-hooks/auth';
@@ -37,67 +45,78 @@ interface CommunityRequest {
 
 const ADMIN_EMAIL = 'aneeshkadake@gmail.com';
 
-const AdminDashboard = () => {
+const AdminDashboard: React.FC = () => {
 	const [user] = useAuthState(auth);
 	const [requests, setRequests] = useState<CommunityRequest[]>([]);
-	const [isAdmin, setIsAdmin] = useState(false);
+
+	const [loading, setLoading] = useState(true);
+	const [error, setError] = useState<Error | null>(null);
 	const toast = useToast();
 	const router = useRouter();
 
+	const ADMIN_EMAIL = 'aneeshkadake@gmail.com';
+
 	useEffect(() => {
-		// Check if user is admin
+		const fetchRequests = async () => {
+			if (!user) {
+				router.push('/');
+				return;
+			}
 
-		setIsAdmin(true);
-		// Subscribe to community requests
-		const q = query(collection(db, 'communityRequests'));
-		const unsubscribe = onSnapshot(q, (querySnapshot) => {
-			const requests: CommunityRequest[] = [];
-			querySnapshot.forEach((doc) => {
-				requests.push({
-					id: doc.id,
-					...doc.data(),
-				} as CommunityRequest);
-			});
-			setRequests(requests);
-		});
+			// Check if user is admin based on email
+			const isAdmin = user.email === ADMIN_EMAIL;
+			if (!isAdmin) {
+				router.push('/');
+				return;
+			}
 
-		return () => unsubscribe();
-	}, [user, isAdmin, router]);
+			try {
+				const q = query(
+					collection(db, 'communityRequests'),
+					orderBy('createdAt', 'desc')
+				);
 
-	{
-		/*useEffect(() => {
-		// Check if user is admin
-		if (user?.email === ADMIN_EMAIL) {
-			setIsAdmin(true);
-			// Subscribe to community requests
-			const q = query(collection(db, 'communityRequests'));
-			const unsubscribe = onSnapshot(q, (querySnapshot) => {
-				const requests: CommunityRequest[] = [];
-				querySnapshot.forEach((doc) => {
-					requests.push({
-						id: doc.id,
-						...doc.data(),
-					} as CommunityRequest);
-				});
-				setRequests(requests);
-			});
+				const unsubscribe = onSnapshot(
+					q,
+					(snapshot) => {
+						const requests: CommunityRequest[] = [];
+						snapshot.forEach((doc) => {
+							requests.push({
+								id: doc.id,
+								...doc.data(),
+							} as CommunityRequest);
+						});
+						setRequests(requests);
+						setLoading(false);
+					},
+					(error) => {
+						console.error('Error fetching requests:', error);
+						setError(error as Error);
+						setLoading(false);
+					}
+				);
 
-			return () => unsubscribe();
-		} else {
-			router.push('/request-community'); // Redirect non-admin users
-		}
-	}, [user, isAdmin, router]);*/
-	}
+				return () => unsubscribe();
+			} catch (error) {
+				console.error('Error in admin dashboard:', error);
+				setError(error as Error);
+				setLoading(false);
+			}
+		};
+
+		fetchRequests();
+	}, [user, router]);
 
 	const handleApprove = async (request: CommunityRequest) => {
-		if (!user) return;
-
 		try {
+			setLoading(true);
+
 			await runTransaction(db, async (transaction) => {
 				// Create the community
 				const communityDocRef = doc(db, 'communities', request.name);
-				const communityDoc = await transaction.get(communityDocRef);
 
+				// Check if community already exists
+				const communityDoc = await transaction.get(communityDocRef);
 				if (communityDoc.exists()) {
 					throw new Error('Community name is already taken');
 				}
@@ -105,23 +124,22 @@ const AdminDashboard = () => {
 				// Create community document
 				transaction.set(communityDocRef, {
 					creatorId: request.userId,
-					createdAt: new Date().toISOString(),
+					createdAt: serverTimestamp(),
 					numberOfMembers: 1,
 					privacyType: request.type,
 				});
 
 				// Create community snippet for the requesting user
-				transaction.set(
-					doc(
-						db,
-						`users/${request.userId}/communitySnippets`,
-						request.name
-					),
-					{
-						communityId: request.name,
-						isModerator: true,
-					}
+				const userSnippetRef = doc(
+					db,
+					`users/${request.userId}/communitySnippets`,
+					request.name
 				);
+
+				transaction.set(userSnippetRef, {
+					communityId: request.name,
+					isModerator: true,
+				});
 
 				// Update request status
 				const requestDocRef = doc(
@@ -135,7 +153,7 @@ const AdminDashboard = () => {
 			});
 
 			toast({
-				title: 'Community created',
+				title: 'Community approved',
 				description: `Successfully created community: h/${request.name}`,
 				status: 'success',
 				duration: 5000,
@@ -147,11 +165,17 @@ const AdminDashboard = () => {
 				status: 'error',
 				duration: 5000,
 			});
+			console.error('Error approving community:', error);
+		} finally {
+			setLoading(false);
 		}
 	};
 
 	const handleReject = async (requestId: string) => {
 		try {
+			setLoading(true);
+
+			// Update request status to rejected
 			await updateDoc(doc(db, 'communityRequests', requestId), {
 				status: 'rejected',
 			});
@@ -168,11 +192,39 @@ const AdminDashboard = () => {
 				status: 'error',
 				duration: 3000,
 			});
+			console.error('Error rejecting request:', error);
+		} finally {
+			setLoading(false);
 		}
 	};
 
-	if (!isAdmin) {
-		return <Text>Access denied. Admin only area.</Text>;
+	// Only check if not admin after loading is complete
+	if (user?.email !== ADMIN_EMAIL) {
+		return (
+			<Box p={4}>
+				<Text>Access denied. Admin only area.</Text>
+				<Button mt={4} onClick={() => router.push('/')}>
+					Return Home
+				</Button>
+			</Box>
+		);
+	}
+
+	if (loading) {
+		return (
+			<Box p={4}>
+				<Spinner />
+			</Box>
+		);
+	}
+	if (error) {
+		return (
+			<Alert status="error">
+				<AlertIcon />
+				<AlertTitle>Error</AlertTitle>
+				<AlertDescription>{error.message}</AlertDescription>
+			</Alert>
+		);
 	}
 
 	return (
@@ -201,21 +253,22 @@ const AdminDashboard = () => {
 							<Td>{request.status}</Td>
 							<Td>
 								{request.status === 'pending' && (
-									<>
+									<ButtonGroup spacing={2}>
 										<Button
-											onClick={() => handleApprove(request)}
 											colorScheme="green"
 											size="sm"
-											mr={2}>
+											onClick={() => handleApprove(request)}
+											isLoading={loading}>
 											Approve
 										</Button>
 										<Button
-											onClick={() => handleReject(request.id)}
 											colorScheme="red"
-											size="sm">
+											size="sm"
+											onClick={() => handleReject(request.id)}
+											isLoading={loading}>
 											Reject
 										</Button>
-									</>
+									</ButtonGroup>
 								)}
 							</Td>
 						</Tr>

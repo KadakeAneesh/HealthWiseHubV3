@@ -47,16 +47,29 @@ const Home: NextPage = () => {
 					(snippet) => snippet.communityId
 				);
 
-				const postQuery = query(
-					collection(db, 'posts'),
-					where('communityId', 'in', myCommunityIds),
-					limit(10)
-				);
-				const postDocs = await getDocs(postQuery);
+				// Update query to handle empty array case
+				const postsQuery =
+					myCommunityIds.length > 0
+						? query(
+								collection(db, 'posts'),
+								where('communityId', 'in', myCommunityIds),
+								orderBy('createdAt', 'desc'),
+								limit(10)
+						  )
+						: query(
+								collection(db, 'posts'),
+								orderBy('voteStatus', 'desc'),
+								limit(10)
+						  );
+
+				const postDocs = await getDocs(postsQuery);
 				const posts = postDocs.docs.map((doc) => ({
 					id: doc.id,
 					...doc.data(),
 				}));
+
+				console.log('Fetched posts:', posts); // Debug log
+
 				setPostStateValue((prev) => ({
 					...prev,
 					posts: posts as Post[],
@@ -65,34 +78,37 @@ const Home: NextPage = () => {
 				buildNoUserHomeFeed();
 			}
 		} catch (error) {
-			console.log('buildUserHomeFeed error', error);
+			console.error('buildUserHomeFeed error', error);
 		}
 		setLoading(false);
 	};
 
 	const buildNoUserHomeFeed = async () => {
 		setLoading(true);
-
 		try {
-			const postQuery = query(
+			const postsQuery = query(
 				collection(db, 'posts'),
 				orderBy('voteStatus', 'desc'),
 				limit(10)
 			);
 
-			const postDocs = await getDocs(postQuery);
+			console.log('Fetching no-user feed'); // Debug log
+
+			const postDocs = await getDocs(postsQuery);
 			const posts = postDocs.docs.map((doc) => ({
 				id: doc.id,
 				...doc.data(),
 			}));
+
+			console.log('Fetched no-user posts:', posts); // Debug log
+
 			setPostStateValue((prev) => ({
 				...prev,
 				posts: posts as Post[],
 			}));
 		} catch (error) {
-			console.log('buildNoUserHomeFeed error', error);
+			console.error('buildNoUserHomeFeed error', error);
 		}
-
 		setLoading(false);
 	};
 
@@ -118,43 +134,46 @@ const Home: NextPage = () => {
 		}
 	};
 
-	const handleSearch = (query: string) => {
-		router.push(`/search?query=${encodeURIComponent(query)}`);
-	};
+	// const handleSearch = (query: string) => {
+	// 	router.push(`/search?query=${encodeURIComponent(query)}`);
+	// };
 
-	//useEffects
-	useEffect(() => {
-		if (communityStateValue.snippetsFetched) buildUserHomeFeed();
-	}, [communityStateValue.snippetsFetched]);
+	// //useEffects
+	// useEffect(() => {
+	// 	if (communityStateValue.snippetsFetched) buildUserHomeFeed();
+	// }, [communityStateValue.snippetsFetched]);
+
+	// useEffect(() => {
+	// 	if (!user && !loadingUser) buildNoUserHomeFeed();
+	// }, [user, loadingUser]);
+
+	// useEffect(() => {
+	// 	if (user && postStateValue.posts.length) getUserPostVotes();
+
+	// 	// cleanup function
+	// 	return () => {
+	// 		setPostStateValue((prev) => ({
+	// 			...prev,
+	// 			postVotes: [],
+	// 		}));
+	// 	};
+	// }, [user, postStateValue.posts]);
 
 	useEffect(() => {
-		if (!user && !loadingUser) buildNoUserHomeFeed();
+		if (!user && !loadingUser) {
+			buildNoUserHomeFeed();
+		}
 	}, [user, loadingUser]);
 
 	useEffect(() => {
-		if (user && postStateValue.posts.length) getUserPostVotes();
-
-		// cleanup function
-		return () => {
-			setPostStateValue((prev) => ({
-				...prev,
-				postVotes: [],
-			}));
-		};
-	}, [user, postStateValue.posts]);
+		if (user && communityStateValue.snippetsFetched) {
+			buildUserHomeFeed();
+		}
+	}, [user, communityStateValue.snippetsFetched]);
 
 	return (
 		<PageContent>
 			<>
-				{/* <Box padding={8}>
-					<Heading mb={4}>Health Articles Search</Heading>
-					{/* <SearchBar onSearch={handleSearch} />
-=======
-				{/*<Box padding={8}>
-					<Heading mb={4}>Health Articles Search</Heading>
-					 <SearchBar onSearch={handleSearch} />
->>>>>>> 8b6c0a8fd6c74c29d54ebe773c2524c8bd89f0d3
-				</Box> */}
 				<CreatePostLink />
 				{loading ? (
 					<PostLoader />
@@ -179,9 +198,9 @@ const Home: NextPage = () => {
 					</Stack>
 				)}
 			</>
-			<>
+			<Stack spacing={5}>
 				<Recommendations />
-			</>
+			</Stack>
 		</PageContent>
 	);
 };

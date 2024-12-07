@@ -21,9 +21,9 @@ import { User, signOut } from 'firebase/auth';
 import React from 'react';
 import { CgProfile } from 'react-icons/cg';
 import { FaRegSmile } from 'react-icons/fa';
-import { MdOutlineLogin } from 'react-icons/md';
+import { MdDashboard, MdOutlineLogin } from 'react-icons/md';
 import { VscAccount } from 'react-icons/vsc';
-import { HiUserGroup } from 'react-icons/hi'; // Added for communities icon
+import { HiUserAdd, HiUserGroup } from 'react-icons/hi'; // Added for communities icon
 import { useRouter } from 'next/router';
 import { useResetRecoilState, useSetRecoilState } from 'recoil';
 import Link from 'next/link';
@@ -35,7 +35,7 @@ type UserMenuProps = {
 const UserMenu: React.FC<UserMenuProps> = ({ user }) => {
 	const setAuthModalState = useSetRecoilState(authModalState);
 	const router = useRouter();
-	const isAdmin = user?.uid === 'aneeshkadake@gmail.com';
+	const isAdmin = user?.email === 'aneeshkadake@gmail.com';
 
 	const logout = async () => {
 		await signOut(auth);
@@ -93,6 +93,28 @@ const UserMenu: React.FC<UserMenuProps> = ({ user }) => {
 								View all Communities
 							</Flex>
 						</MenuItem>
+						<MenuItem
+							fontSize="10pt"
+							fontWeight={700}
+							_hover={{ bg: 'blue.500', color: 'white' }}
+							onClick={() => router.push('/request-community')}>
+							<Flex align="center">
+								<Icon fontSize={20} mr={2} as={HiUserAdd} />
+								Request Community
+							</Flex>
+						</MenuItem>
+						{isAdmin && (
+							<MenuItem
+								fontSize="10pt"
+								fontWeight={700}
+								_hover={{ bg: 'blue.500', color: 'white' }}
+								onClick={() => router.push('/admin/Dashboard')}>
+								<Flex align="center">
+									<Icon fontSize={20} mr={2} as={MdDashboard} />
+									Admin Dashboard
+								</Flex>
+							</MenuItem>
+						)}
 						<MenuDivider />
 						<MenuItem
 							fontSize="10pt"
@@ -144,14 +166,6 @@ const UserMenu: React.FC<UserMenuProps> = ({ user }) => {
 								View all Communities
 							</Flex>
 						</MenuItem>
-						<MenuItem as={Link} href="/request-community">
-							Request Community
-						</MenuItem>
-						{isAdmin && (
-							<MenuItem as={Link} href="/admin/dashboard">
-								Admin Dashboard
-							</MenuItem>
-						)}
 						<MenuDivider />
 						<MenuItem
 							fontSize="10pt"

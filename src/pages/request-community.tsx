@@ -9,6 +9,7 @@ import {
 	Textarea,
 	VStack,
 	useToast,
+	Text,
 } from '@chakra-ui/react';
 import { addDoc, collection } from 'firebase/firestore';
 import { db } from '@/firebase/clientApp';
@@ -31,6 +32,18 @@ const CommunityRequestForm = () => {
 				description: 'You must be logged in to request a community',
 				status: 'error',
 				duration: 3000,
+				isClosable: true,
+			});
+			return;
+		}
+
+		if (name.includes(' ')) {
+			toast({
+				title: 'Invalid community name',
+				description:
+					'Community names cannot contain spaces. Use hyphens (-) or underscores (_) instead.',
+				status: 'error',
+				duration: 5000,
 				isClosable: true,
 			});
 			return;
@@ -81,15 +94,23 @@ const CommunityRequestForm = () => {
 			<form onSubmit={handleSubmit}>
 				<VStack spacing={4}>
 					<FormControl isRequired>
-						<FormLabel>Community Name</FormLabel>
+						<FormLabel color={'black'} fontSize="x-large">
+							Community Name
+						</FormLabel>
 						<Input
 							value={name}
 							onChange={(e) => setName(e.target.value)}
 							background={'white'}
+							placeholder="community-name (no spaces allowed)"
 						/>
+						<Text fontSize="sm" color="gray.900" mt={1}>
+							Use hyphens (-) or underscores (_) instead of spaces
+						</Text>
 					</FormControl>
 					<FormControl isRequired>
-						<FormLabel>Description</FormLabel>
+						<FormLabel color={'black'} fontSize="x-large">
+							Description
+						</FormLabel>
 						<Textarea
 							value={description}
 							onChange={(e) => setDescription(e.target.value)}
@@ -97,7 +118,9 @@ const CommunityRequestForm = () => {
 						/>
 					</FormControl>
 					<FormControl isRequired>
-						<FormLabel>Type</FormLabel>
+						<FormLabel color={'black'} fontSize="x-large">
+							Type
+						</FormLabel>
 						<Select
 							value={type}
 							background={'white'}

@@ -88,41 +88,44 @@ const NewPostForm: React.FC<NewPostFormProps> = ({
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState(false);
 
+	const communityId = router.query.communityId as string;
+
 	const handleCreatePost = async () => {
-		const { communityId } = router.query;
-
-		const newPost: Post = {
-			communityId: communityId as string,
-			communityImageURL: communityImageURL || '',
-			creatorId: user?.uid,
-			creatorDisplayName: user.email!.split('@')[0],
-			title: textInputs.title,
-			body: textInputs.body,
-			numberOfComments: 0,
-			voteStatus: 0,
-			createdAt: serverTimestamp() as Timestamp,
-			id: '',
-		};
-
-		setLoading(true);
 		try {
-			const postDocRef = await addDoc(
-				collection(db, 'posts'),
-				newPost
-			);
+			setLoading(true);
 
+			// Create a new post document reference
+			const postDocRef = await addDoc(collection(db, 'posts'), {
+				creatorId: user?.uid,
+				creatorDisplayName: user.email!.split('@')[0],
+				communityId: communityId as string, // Use the communityId from router
+				title: textInputs.title,
+				body: textInputs.body,
+				numberOfComments: 0,
+				voteStatus: 0,
+				createdAt: serverTimestamp(),
+				communityImageURL: communityImageURL || '',
+			});
+
+			// Immediately update the document with its ID
+			await updateDoc(postDocRef, {
+				id: postDocRef.id, // Set the document ID as a field
+			});
+
+			// Update local state if needed
 			if (selectedFile) {
 				const imageRef = ref(storage, `posts/${postDocRef.id}/image`);
 				await uploadString(imageRef, selectedFile, 'data_url');
 				const downloadURL = await getDownloadURL(imageRef);
-
 				await updateDoc(postDocRef, {
 					imageURL: downloadURL,
 				});
 			}
+
+			// Clear form
 			router.back();
 		} catch (error: any) {
-			console.log('handleCreatePost error', error.message);
+			console.error('handleCreatePost error', error.message);
 			setError(true);
 		}
 		setLoading(false);

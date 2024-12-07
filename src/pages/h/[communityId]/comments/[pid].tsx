@@ -12,6 +12,7 @@ import { doc, getDoc } from 'firebase/firestore';
 import { useRouter } from 'next/router';
 import React, { useEffect } from 'react';
 import { useAuthState } from 'react-firebase-hooks/auth';
+import Error from 'next/error';
 
 const PostPage: React.FC = () => {
 	const { postStateValue, setPostStateValue, onDeletePost, onVote } =
@@ -26,6 +27,8 @@ const PostPage: React.FC = () => {
 		? decodeURIComponent(communityId as string)
 		: '';
 
+	//console.log('Router query params:', router.query); // Debug logging
+
 	const fetchPost = async (postId: string) => {
 		try {
 			const postDocRef = doc(db, 'posts', postId);
@@ -38,6 +41,64 @@ const PostPage: React.FC = () => {
 			console.log('fetchPost error', error);
 		}
 	};
+
+	// const DebugRouter: React.FC = () => {
+	// 	const router = useRouter();
+
+	// 	useEffect(() => {
+	// 		console.log('Current route:', {
+	// 			pathname: router.pathname,
+	// 			query: router.query,
+	// 			asPath: router.asPath,
+	// 		});
+	// 	}, [router.pathname, router.query]);
+
+	// 	return null;
+	// };
+
+	useEffect(() => {
+		if (!pid || !communityId) return;
+
+		const fetchPost = async () => {
+			try {
+				const postRef = doc(db, 'posts', pid as string);
+				const postDoc = await getDoc(postRef);
+
+				if (!postDoc.exists()) {
+					console.error('Post not found');
+					return;
+				}
+
+				setPostStateValue((prev) => ({
+					...prev,
+					selectedPost: {
+						id: postDoc.id,
+						...postDoc.data(),
+					} as Post,
+				}));
+			} catch (error) {
+				console.error('Error fetching post:', error);
+			}
+		};
+
+		fetchPost();
+	}, [pid, communityId]);
+
+	useEffect(() => {
+		console.log('Comments page mounted:', {
+			query: router.query,
+			path: router.asPath,
+		});
+	}, [router.query]);
+
+	useEffect(() => {
+		console.log('Router query:', router.query); // Debug log
+		if (!communityId || !pid) {
+			console.log('Missing params:', { communityId, pid }); // Debug log
+			return;
+		}
+		// ... rest of your code
+	}, [router.query]);
 
 	useEffect(() => {
 		if (!decodedCommunityId || !pid) return;
@@ -91,9 +152,13 @@ const PostPage: React.FC = () => {
 
 	// 	loadPost();
 	// }, [router.query.pid, setPostStateValue]);
+	if (!communityId || !pid) {
+		return <Error statusCode={404} />;
+	}
 
 	return (
 		<PageContent>
+			{/* <DebugRouter /> */}
 			<>
 				{loading ? (
 					<PostLoader />

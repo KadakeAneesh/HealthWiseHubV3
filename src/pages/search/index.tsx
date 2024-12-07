@@ -64,9 +64,15 @@ export default function SearchPage() {
 				<Container maxW="container.lg" py={8}>
 					<VStack spacing={8} align="stretch">
 						{router.query.query && (
-							<Box>
-								<Text mb={4} color="gray.600">
-									Search results for: {router.query.query}
+							<Box mb={6}>
+								<Text
+									fontSize="xx-large"
+									fontWeight="black"
+									color="black"
+									borderBottom="2px"
+									borderColor="gray.200"
+									pb={2}>
+									<h1>Search results for: {router.query.query}</h1>
 								</Text>
 								<SearchResults
 									query={router.query.query as string}
