@@ -319,7 +319,7 @@ const CommunitiesPage: React.FC = () => {
 									<Image
 										src={
 											community.imageURL ||
-											'/images/healthwise-noimage.png'
+											'/images/healthwise-noimage.jpg'
 										}
 										alt={community.id}
 										objectFit="cover"
