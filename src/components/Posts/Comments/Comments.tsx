@@ -19,6 +19,8 @@ import {
 	orderBy,
 	query,
 	serverTimestamp,
+	setDoc,
+	updateDoc,
 	where,
 	writeBatch,
 } from 'firebase/firestore';
@@ -51,21 +53,24 @@ const Comments: React.FC<CommentsProps> = ({
 			const batch = writeBatch(db);
 
 			// Create comment document
-			const commentDocRef = doc(collection(db, 'comments'));
-			const newComment: Comment = {
+			const commentDocRef = doc(
+				collection(db, `posts/${selectedPost?.id}/comments`)
+			);
+
+			const newComment = {
 				id: commentDocRef.id,
-				postId: selectedPost?.id!,
 				creatorId: user.uid,
 				creatorDisplayText: user.email!.split('@')[0],
 				communityId,
+				postId: selectedPost?.id!,
 				postTitle: selectedPost?.title!,
 				text: commentText,
-				createdAt: serverTimestamp() as Timestamp,
+				createdAt: serverTimestamp(),
 			};
-
+			await setDoc(commentDocRef, newComment);
 			batch.set(commentDocRef, newComment);
 
-			batch.update(doc(db, 'posts', selectedPost?.id!), {
+			await updateDoc(doc(db, 'posts', selectedPost?.id!), {
 				numberOfComments: increment(1),
 			});
 
@@ -132,8 +137,7 @@ const Comments: React.FC<CommentsProps> = ({
 		setFetchLoading(true);
 		try {
 			const commentsQuery = query(
-				collection(db, 'comments'),
-				where('postId', '==', selectedPost.id),
+				collection(db, `posts/${selectedPost?.id}/comments`),
 				orderBy('createdAt', 'desc')
 			);
 
